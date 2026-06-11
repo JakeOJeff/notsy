@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, CheckSquare, ChevronDown, ChevronRight, Plus, Trash2, NotepadText } from 'lucide-react'
+import { FileText, CheckSquare, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { Separator } from './ui/separator'
 import { useNotesStore } from '../store/useNotesStore'
@@ -36,14 +36,6 @@ export default function Sidebar({ view, setView }) {
 
   return (
     <aside className="flex flex-col w-56 shrink-0 h-full bg-sidebar border-r border-sidebar-border overflow-y-auto">
-      {/* Wordmark */}
-      <div className="flex items-center gap-2.5 px-4 h-12 border-b border-sidebar-border shrink-0">
-        <div className="size-5 rounded-md bg-sidebar-primary flex items-center justify-center shrink-0">
-          <NotepadText size={11} className="text-sidebar-primary-foreground" />
-        </div>
-        <span className="text-sm font-semibold text-sidebar-foreground tracking-tight">Notsy</span>
-      </div>
-
       <div className="flex flex-col py-2 flex-1 overflow-y-auto gap-0.5">
         {/* ── Notes ── */}
         <SectionLabel

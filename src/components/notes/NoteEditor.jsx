@@ -14,8 +14,11 @@ import { useNotesStore } from '../../store/useNotesStore'
 const FONT_SIZES = ['11','12','13','14','15','16','18','20','24','28','32']
 
 export default function NoteEditor({ note }) {
-  const editorRef  = useRef(null)
-  const saveTimer  = useRef(null)
+  const editorRef          = useRef(null)
+  const saveTimer          = useRef(null)
+  const lastSavedContent   = useRef(note.content ?? '') // what we last wrote to the store
+  const lastLocalEdit      = useRef(0)                  // timestamp of last keypress
+  const titleInputRef      = useRef(null)
   const updateNote = useNotesStore(s => s.updateNote)
 
   const [words,       setWords]       = useState(0)
@@ -41,12 +44,37 @@ export default function NoteEditor({ note }) {
 
   const save = useCallback(() => {
     if (editorRef.current) {
-      updateNote(note.id, { content: editorRef.current.innerHTML })
+      const content = editorRef.current.innerHTML
+      lastSavedContent.current = content
+      updateNote(note.id, { content })
       setSavedAt(new Date())
     }
   }, [note.id, updateNote])
 
-  const schedule = () => { clearTimeout(saveTimer.current); saveTimer.current = setTimeout(save, 600) }
+  const schedule = () => {
+    lastLocalEdit.current = Date.now()
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(save, 600)
+  }
+
+  // ── Remote content sync ────────────────────────────────────────────────────
+  // When a collaborator's patch lands, note.content changes in the store.
+  // Only apply it if: it's not our own echo AND we haven't typed in the last second.
+  useEffect(() => {
+    if (note.content === lastSavedContent.current) return          // own echo
+    if (Date.now() - lastLocalEdit.current < 1000) return          // mid-edit grace
+    if (!editorRef.current) return
+    editorRef.current.innerHTML = note.content || ''
+    lastSavedContent.current = note.content ?? ''
+    recalc()
+  }, [note.content]) // eslint-disable-line
+
+  // ── Remote title sync ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (titleInputRef.current && document.activeElement !== titleInputRef.current) {
+      titleInputRef.current.value = note.title || ''
+    }
+  }, [note.title])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -146,6 +174,7 @@ export default function NoteEditor({ note }) {
         {/* Title bar */}
         <div className="px-8 pt-6 pb-3 border-b border-border shrink-0">
           <input
+            ref={titleInputRef}
             type="text"
             defaultValue={note.title}
             placeholder="Untitled Note"
