@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { FileText, CheckSquare, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { FileText, CheckSquare, ChevronDown, ChevronRight, Plus, Trash2, NotepadText } from 'lucide-react'
+import { cn } from '../lib/utils'
+import { Separator } from './ui/separator'
 import { useNotesStore } from '../store/useNotesStore'
 import { useTodosStore } from '../store/useTodosStore'
 
@@ -26,68 +28,72 @@ export default function Sidebar({ view, setView }) {
 
   const filterCount = (id) => {
     if (id === 'all')     return todos.length
-    if (id === 'active')  return todos.filter(t => ['todo', 'in-progress'].includes(t.status)).length
+    if (id === 'active')  return todos.filter(t => ['todo','in-progress'].includes(t.status)).length
     if (id === 'backlog') return todos.filter(t => t.status === 'backlog').length
-    if (id === 'done')    return todos.filter(t => ['done', 'cancelled'].includes(t.status)).length
+    if (id === 'done')    return todos.filter(t => ['done','cancelled'].includes(t.status)).length
     return 0
   }
 
   return (
-    <aside className="flex flex-col w-60 min-w-[240px] h-full bg-surface-raised border-r border-surface-border select-none overflow-y-auto flex-shrink-0">
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-surface-border">
-        <div className="w-6 h-6 rounded-md bg-accent flex items-center justify-center text-white text-xs font-bold flex-shrink-0">N</div>
-        <span className="font-semibold text-ink text-sm">Notsy</span>
+    <aside className="flex flex-col w-56 shrink-0 h-full bg-sidebar border-r border-sidebar-border overflow-y-auto">
+      {/* Wordmark */}
+      <div className="flex items-center gap-2.5 px-4 h-12 border-b border-sidebar-border shrink-0">
+        <div className="size-5 rounded-md bg-sidebar-primary flex items-center justify-center shrink-0">
+          <NotepadText size={11} className="text-sidebar-primary-foreground" />
+        </div>
+        <span className="text-sm font-semibold text-sidebar-foreground tracking-tight">Notsy</span>
       </div>
 
-      {/* NOTES */}
-      <div className="mt-3">
-        <SectionHeader
-          icon={<FileText size={12} />}
+      <div className="flex flex-col py-2 flex-1 overflow-y-auto gap-0.5">
+        {/* ── Notes ── */}
+        <SectionLabel
+          icon={<FileText size={11} />}
           label="Notes"
           open={notesOpen}
           onToggle={() => setNotesOpen(v => !v)}
           onAdd={() => { createNote(); setView('notes') }}
         />
+
         {notesOpen && (
-          <div className="mt-0.5 pb-1">
+          <div className="mb-1 px-2">
             {notes.map(note => (
               <SidebarItem
                 key={note.id}
                 label={note.title || 'Untitled Note'}
                 active={view === 'notes' && activeNoteId === note.id}
                 onClick={() => { openNote(note.id); setView('notes') }}
-                onDelete={notes.length > 1 ? () => deleteNote(note.id) : null}
+                onDelete={notes.length > 1 ? (e) => { e.stopPropagation(); deleteNote(note.id) } : null}
               />
             ))}
             <button
               onClick={() => { createNote(); setView('notes') }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-ink-faint hover:text-ink-muted hover:bg-surface-hover transition-colors rounded-md mx-1"
-              style={{ width: 'calc(100% - 8px)' }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors"
             >
-              <Plus size={12} /> New note
+              <Plus size={11} />
+              New note
             </button>
           </div>
         )}
-      </div>
 
-      <div className="mx-3 my-2 border-t border-surface-border" />
+        <div className="px-3 my-1">
+          <Separator className="bg-sidebar-border" />
+        </div>
 
-      {/* TODOS */}
-      <div>
-        <SectionHeader
-          icon={<CheckSquare size={12} />}
+        {/* ── Todos ── */}
+        <SectionLabel
+          icon={<CheckSquare size={11} />}
           label="Todos"
           open={todosOpen}
           onToggle={() => setTodosOpen(v => !v)}
         />
+
         {todosOpen && (
-          <div className="mt-0.5 pb-1">
+          <div className="px-2">
             {TODO_FILTERS.map(f => (
               <SidebarItem
                 key={f.id}
                 label={f.label}
-                badge={filterCount(f.id)}
+                count={filterCount(f.id)}
                 active={view === 'todos' && statusFilter === f.id}
                 onClick={() => { setView('todos'); setFilter(f.id) }}
               />
@@ -99,49 +105,52 @@ export default function Sidebar({ view, setView }) {
   )
 }
 
-function SectionHeader({ icon, label, open, onToggle, onAdd }) {
+function SectionLabel({ icon, label, open, onToggle, onAdd }) {
   return (
-    <div className="group flex items-center justify-between px-3 py-1 cursor-pointer" onClick={onToggle}>
-      <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-faint uppercase tracking-widest">
-        {icon}
-        {label}
-      </span>
-      <span className="flex items-center gap-0.5 text-ink-faint">
+    <button
+      onClick={onToggle}
+      className="group flex items-center justify-between w-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 hover:text-sidebar-foreground/60 transition-colors"
+    >
+      <span className="flex items-center gap-1.5">{icon}{label}</span>
+      <span className="flex items-center gap-0.5">
         {onAdd && (
           <span
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-surface-overlay hover:text-ink transition-all"
+            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
             onClick={(e) => { e.stopPropagation(); onAdd() }}
-            title={`New ${label.toLowerCase().slice(0, -1)}`}
           >
-            <Plus size={11} />
+            <Plus size={10} />
           </span>
         )}
-        {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
       </span>
-    </div>
+    </button>
   )
 }
 
-function SidebarItem({ label, active, onClick, onDelete, badge }) {
+function SidebarItem({ label, active, onClick, onDelete, count }) {
   return (
     <div
-      className={`group flex items-center justify-between px-3 py-1.5 rounded-md mx-1 cursor-pointer transition-colors
-        ${active ? 'bg-surface-overlay text-ink' : 'text-ink-muted hover:bg-surface-hover hover:text-ink'}`}
-      style={{ width: 'calc(100% - 8px)' }}
       onClick={onClick}
+      className={cn(
+        'group relative flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer text-sm transition-colors',
+        active
+          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+          : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+      )}
     >
-      <span className="truncate text-sm">{label}</span>
-      <span className="flex items-center gap-1 flex-shrink-0">
-        {badge !== undefined && (
-          <span className="text-xs text-ink-faint">{badge || ''}</span>
+      <span className="truncate">{label}</span>
+      <span className="flex items-center gap-1 shrink-0">
+        {count !== undefined && count > 0 && (
+          <span className={cn('text-[11px] tabular-nums', active ? 'text-sidebar-foreground/60' : 'text-sidebar-foreground/30')}>
+            {count}
+          </span>
         )}
         {onDelete && (
           <button
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-all"
-            onClick={(e) => { e.stopPropagation(); onDelete() }}
-            title="Delete"
+            onClick={onDelete}
+            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-destructive transition-all"
           >
-            <Trash2 size={11} />
+            <Trash2 size={10} />
           </button>
         )}
       </span>

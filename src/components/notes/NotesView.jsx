@@ -1,7 +1,9 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useEffect } from 'react'
+import { Plus, X } from 'lucide-react'
+import { cn } from '../../lib/utils'
 import { useNotesStore } from '../../store/useNotesStore'
 import NoteEditor from './NoteEditor'
-import { Plus, X } from 'lucide-react'
+import { Button } from '../ui/button'
 
 export default function NotesView() {
   const notes        = useNotesStore(s => s.notes)
@@ -11,103 +13,80 @@ export default function NotesView() {
   const setActive    = useNotesStore(s => s.setActiveNote)
   const closeTab     = useNotesStore(s => s.closeTab)
 
-  const openTabs = openTabIds.map(id => notes.find(n => n.id === id)).filter(Boolean)
+  const openTabs   = openTabIds.map(id => notes.find(n => n.id === id)).filter(Boolean)
   const activeNote = notes.find(n => n.id === activeNoteId) ?? null
 
-  const tabBarRef = useRef(null)
-
-  // Keyboard: Ctrl+N → new note
   useEffect(() => {
-    const handler = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault()
-        createNote()
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    const h = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote() } }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
   }, [createNote])
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full bg-background">
       {/* Tab bar */}
       <div
-        ref={tabBarRef}
-        className="flex items-stretch border-b border-surface-border bg-surface-raised overflow-x-auto flex-shrink-0"
+        className="flex items-end gap-0.5 px-3 pt-2 border-b border-border bg-card overflow-x-auto shrink-0"
         style={{ scrollbarWidth: 'none' }}
       >
         {openTabs.map(note => (
           <Tab
             key={note.id}
-            note={note}
+            label={note.title || 'Untitled Note'}
             active={note.id === activeNoteId}
             onActivate={() => setActive(note.id)}
-            onClose={() => closeTab(note.id)}
-            canClose={openTabs.length > 1}
+            onClose={openTabs.length > 1 ? () => closeTab(note.id) : null}
           />
         ))}
-
-        {/* New tab button */}
         <button
-          className="flex items-center justify-center px-3 text-ink-faint hover:text-ink hover:bg-surface-hover transition-colors flex-shrink-0 border-r border-surface-border"
-          onClick={() => createNote()}
+          onClick={createNote}
           title="New note (Ctrl+N)"
+          className="mb-px flex items-center justify-center size-7 shrink-0 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted transition-colors"
         >
-          <Plus size={14} />
+          <Plus size={13} />
         </button>
       </div>
 
       {/* Editor area */}
       <div className="flex-1 overflow-hidden">
-        {activeNote ? (
-          <NoteEditor key={activeNote.id} note={activeNote} />
-        ) : (
-          <EmptyState onCreate={createNote} />
-        )}
+        {activeNote
+          ? <NoteEditor key={activeNote.id} note={activeNote} />
+          : (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+              <p className="text-sm">No note open</p>
+              <Button size="sm" onClick={createNote}>New note</Button>
+            </div>
+          )
+        }
       </div>
     </div>
   )
 }
 
-function Tab({ note, active, onActivate, onClose, canClose }) {
+function Tab({ label, active, onActivate, onClose }) {
   return (
     <div
-      className={`group flex items-center gap-1.5 px-3 py-2.5 border-r border-surface-border cursor-pointer transition-colors flex-shrink-0 max-w-[180px]
-        ${active
-          ? 'bg-surface text-ink border-b-2 border-b-accent -mb-px'
-          : 'bg-surface-raised text-ink-muted hover:bg-surface-hover hover:text-ink'
-        }`}
       onClick={onActivate}
-      style={{ minWidth: 100 }}
+      className={cn(
+        'group relative flex items-center gap-1.5 px-3 py-1.5 rounded-t-lg cursor-pointer select-none transition-colors shrink-0 max-w-[180px]',
+        active
+          ? 'bg-background text-foreground border border-border border-b-background -mb-px z-10'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+      )}
+      style={{ minWidth: 90 }}
     >
-      <span className="truncate text-sm">{note.title || 'Untitled Note'}</span>
-      {canClose && (
+      <span className="truncate text-xs font-medium">{label}</span>
+      {onClose && (
         <button
-          className={`flex-shrink-0 p-0.5 rounded transition-colors
-            ${active
-              ? 'opacity-60 hover:opacity-100 hover:bg-surface-border'
-              : 'opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-surface-border'
-            }`}
           onClick={(e) => { e.stopPropagation(); onClose() }}
-          title="Close tab"
+          className={cn(
+            'shrink-0 size-4 flex items-center justify-center rounded transition-colors hover:bg-border',
+            active ? 'opacity-50 hover:opacity-100' : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
+          )}
         >
-          <X size={11} />
+          <X size={10} />
         </button>
       )}
-    </div>
-  )
-}
-
-function EmptyState({ onCreate }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-ink-faint gap-3">
-      <p className="text-sm">No note open</p>
-      <button
-        onClick={onCreate}
-        className="px-4 py-2 text-sm bg-accent text-white rounded-md hover:bg-accent/90 transition-colors"
-      >
-        Create a note
-      </button>
     </div>
   )
 }

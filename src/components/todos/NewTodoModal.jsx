@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { useTodosStore, STATUS_CONFIG, PRIORITY_CONFIG, LABEL_OPTIONS, LABEL_COLORS } from '../../store/useTodosStore'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '../../lib/utils'
+import { Button } from '../ui/button'
+import { Badge } from '../ui/badge'
+import { Separator } from '../ui/separator'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover'
 import { StatusIcon, PriorityIcon } from './Icons'
-import { X } from 'lucide-react'
+import { useTodosStore, STATUS_CONFIG, PRIORITY_CONFIG, LABEL_OPTIONS, LABEL_VARIANT } from '../../store/useTodosStore'
 
 export default function NewTodoModal({ defaultStatus = 'todo', onClose }) {
   const createTodo = useTodosStore(s => s.createTodo)
@@ -12,12 +18,7 @@ export default function NewTodoModal({ defaultStatus = 'todo', onClose }) {
   const [desc,     setDesc]     = useState('')
   const inputRef = useRef(null)
 
-  useEffect(() => {
-    inputRef.current?.focus()
-    const esc = (e) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', esc)
-    return () => window.removeEventListener('keydown', esc)
-  }, [onClose])
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 60) }, [])
 
   const submit = () => {
     if (!title.trim()) return
@@ -26,31 +27,24 @@ export default function NewTodoModal({ defaultStatus = 'todo', onClose }) {
   }
 
   const toggleLabel = (l) =>
-    setLabels(prev => prev.includes(l) ? prev.filter(x => x !== l) : [...prev, l])
+    setLabels(p => p.includes(l) ? p.filter(x => x !== l) : [...p, l])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-surface-raised border border-surface-border rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-surface-border">
-          <span className="text-sm font-semibold text-ink">New Issue</span>
-          <button onClick={onClose} className="text-ink-faint hover:text-ink transition-colors p-1 rounded hover:bg-surface-overlay">
-            <X size={14} />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[500px] p-0">
+        <DialogHeader>
+          <DialogTitle>New Issue</DialogTitle>
+        </DialogHeader>
 
-        {/* Body */}
-        <div className="p-4 space-y-3">
+        <div className="px-5 py-4 space-y-3">
           {/* Title */}
           <input
             ref={inputRef}
-            type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
             placeholder="Issue title"
-            className="w-full bg-transparent text-ink text-base font-medium placeholder-ink-faint outline-none border-none"
+            className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/50 outline-none border-none"
           />
 
           {/* Description */}
@@ -59,94 +53,119 @@ export default function NewTodoModal({ defaultStatus = 'todo', onClose }) {
             onChange={(e) => setDesc(e.target.value)}
             placeholder="Add a description…"
             rows={3}
-            className="w-full bg-surface-overlay border border-surface-border rounded-md text-sm text-ink-muted placeholder-ink-faint outline-none resize-none p-2 focus:border-accent/50 transition-colors"
+            className={cn(
+              'w-full rounded-lg border border-input bg-muted/40 px-3 py-2',
+              'text-sm text-foreground placeholder:text-muted-foreground/40',
+              'outline-none resize-none transition-all',
+              'focus:ring-2 focus:ring-ring/20 focus:bg-background'
+            )}
           />
 
-          {/* Meta row */}
-          <div className="flex items-center flex-wrap gap-2 pt-1">
+          {/* Metadata chips */}
+          <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
             {/* Status */}
-            <Dropdown
+            <ChipPopover
               trigger={
-                <span className="flex items-center gap-1.5 text-xs text-ink-muted bg-surface-overlay border border-surface-border rounded-md px-2 py-1 hover:border-accent/40 transition-colors cursor-pointer">
-                  <StatusIcon status={status} size={12} />
+                <span className="flex items-center gap-1.5">
+                  <StatusIcon status={status} size={11} />
                   {STATUS_CONFIG[status]?.label}
                 </span>
               }
             >
               {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                <button key={k} onClick={() => setStatus(k)}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-ink-muted hover:text-ink hover:bg-surface-hover transition-colors text-left">
-                  <StatusIcon status={k} size={12} /> {v.label}
-                </button>
+                <PopItem key={k} active={status === k} onClick={() => setStatus(k)}>
+                  <StatusIcon status={k} size={11} /> {v.label}
+                </PopItem>
               ))}
-            </Dropdown>
+            </ChipPopover>
 
             {/* Priority */}
-            <Dropdown
+            <ChipPopover
               trigger={
-                <span className="flex items-center gap-1.5 text-xs text-ink-muted bg-surface-overlay border border-surface-border rounded-md px-2 py-1 hover:border-accent/40 transition-colors cursor-pointer">
-                  <PriorityIcon priority={priority} size={12} />
+                <span className="flex items-center gap-1.5">
+                  <PriorityIcon priority={priority} size={11} />
                   {PRIORITY_CONFIG[priority]?.label}
                 </span>
               }
             >
               {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
-                <button key={k} onClick={() => setPriority(k)}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-ink-muted hover:text-ink hover:bg-surface-hover transition-colors text-left">
-                  <PriorityIcon priority={k} size={12} /> {v.label}
-                </button>
+                <PopItem key={k} active={priority === k} onClick={() => setPriority(k)}>
+                  <PriorityIcon priority={k} size={11} /> {v.label}
+                </PopItem>
               ))}
-            </Dropdown>
+            </ChipPopover>
 
             {/* Labels */}
-            <Dropdown
+            <ChipPopover
+              keepOpen
               trigger={
-                <span className="flex items-center gap-1.5 text-xs text-ink-muted bg-surface-overlay border border-surface-border rounded-md px-2 py-1 hover:border-accent/40 transition-colors cursor-pointer">
-                  {labels.length === 0 ? 'Labels' : labels.join(', ')}
-                </span>
+                labels.length === 0
+                  ? <span className="text-muted-foreground/50">Labels</span>
+                  : <span className="flex items-center gap-1 flex-wrap">
+                      {labels.map(l => <Badge key={l} variant={LABEL_VARIANT[l] ?? 'muted'}>{l}</Badge>)}
+                    </span>
               }
             >
               {LABEL_OPTIONS.map(l => (
-                <button key={l} onClick={() => toggleLabel(l)}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-hover transition-colors text-left">
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: LABEL_COLORS[l] }} />
-                  <span className={labels.includes(l) ? 'text-ink font-medium' : 'text-ink-muted'}>{l}</span>
-                  {labels.includes(l) && <span className="ml-auto text-accent text-xs">✓</span>}
-                </button>
+                <PopItem key={l} active={labels.includes(l)} onClick={() => toggleLabel(l)} check>
+                  <Badge variant={LABEL_VARIANT[l] ?? 'muted'} className="pointer-events-none">{l}</Badge>
+                </PopItem>
               ))}
-            </Dropdown>
+            </ChipPopover>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-surface-border bg-surface">
-          <button onClick={onClose}  className="px-3 py-1.5 text-sm text-ink-muted hover:text-ink transition-colors rounded-md hover:bg-surface-overlay">Cancel</button>
-          <button
-            onClick={submit}
-            disabled={!title.trim()}
-            className="px-4 py-1.5 text-sm bg-accent text-white rounded-md hover:bg-accent/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-medium"
-          >
-            Create issue
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" disabled={!title.trim()} onClick={submit}>Create issue</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-function Dropdown({ trigger, children }) {
+/* ── Chip-style popover trigger ───────────────────────────────────────── */
+function ChipPopover({ trigger, children, keepOpen = false }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="relative">
-      <div onClick={() => setOpen(v => !v)}>{trigger}</div>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-50 bg-surface-raised border border-surface-border rounded-lg shadow-2xl py-1 min-w-[140px]" onClick={() => setOpen(false)}>
-            {children}
-          </div>
-        </>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className={cn(
+          'flex items-center gap-1 text-xs text-muted-foreground',
+          'border border-border rounded-lg px-2 py-1',
+          'hover:bg-muted hover:text-foreground hover:border-border',
+          'transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/30'
+        )}>
+          {trigger}
+          <ChevronDown size={9} className="opacity-40 shrink-0" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="p-1 w-44">
+        <div onClick={keepOpen ? undefined : () => setOpen(false)}>
+          {children}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function PopItem({ children, active, onClick, check = false }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-colors text-left',
+        active
+          ? 'bg-accent text-accent-foreground'
+          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
       )}
-    </div>
+    >
+      {check && (
+        <span className={cn('size-3 flex items-center justify-center text-foreground text-xs shrink-0', !active && 'opacity-0')}>
+          ✓
+        </span>
+      )}
+      {children}
+    </button>
   )
 }

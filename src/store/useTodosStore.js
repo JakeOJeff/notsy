@@ -2,32 +2,33 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export const STATUS_CONFIG = {
-  backlog:     { label: 'Backlog',     order: 0, color: '#555' },
-  todo:        { label: 'Todo',        order: 1, color: '#888' },
-  'in-progress': { label: 'In Progress', order: 2, color: '#F0C000' },
-  done:        { label: 'Done',        order: 3, color: '#26C940' },
-  cancelled:   { label: 'Cancelled',  order: 4, color: '#4D4D4D' },
+  backlog:       { label: 'Backlog',     order: 0, color: '#52525b' },
+  todo:          { label: 'Todo',        order: 1, color: '#71717a' },
+  'in-progress': { label: 'In Progress', order: 2, color: '#a78bfa' },
+  done:          { label: 'Done',        order: 3, color: '#4ade80' },
+  cancelled:     { label: 'Cancelled',   order: 4, color: '#3f3f46' },
 }
 
 export const PRIORITY_CONFIG = {
-  'no-priority': { label: 'No priority', color: '#555' },
-  urgent:        { label: 'Urgent',      color: '#E5484D' },
-  high:          { label: 'High',        color: '#F76808' },
-  medium:        { label: 'Medium',      color: '#F0C000' },
-  low:           { label: 'Low',         color: '#707070' },
+  'no-priority': { label: 'No priority', color: '#3f3f46' },
+  urgent:        { label: 'Urgent',      color: '#f87171' },
+  high:          { label: 'High',        color: '#fb923c' },
+  medium:        { label: 'Medium',      color: '#fbbf24' },
+  low:           { label: 'Low',         color: '#52525b' },
 }
 
 export const LABEL_OPTIONS = ['Bug', 'Feature', 'Design', 'Performance', 'Documentation', 'Research', 'UI', 'API']
 
-export const LABEL_COLORS = {
-  Bug:           '#E5484D',
-  Feature:       '#5E6AD2',
-  Design:        '#A855F7',
-  Performance:   '#F76808',
-  Documentation: '#22C55E',
-  Research:      '#06B6D4',
-  UI:            '#EC4899',
-  API:           '#F59E0B',
+// Maps to Badge variant names (see src/components/ui/badge.jsx)
+export const LABEL_VARIANT = {
+  Bug:           'rose',
+  Feature:       'default',
+  Design:        'indigo',
+  Performance:   'amber',
+  Documentation: 'muted',
+  Research:      'sky',
+  UI:            'default',
+  API:           'muted',
 }
 
 let _counter = 12

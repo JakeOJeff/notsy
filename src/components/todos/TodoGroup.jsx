@@ -1,44 +1,30 @@
 import { useState } from 'react'
+import { ChevronRight, ChevronDown, Plus } from 'lucide-react'
+import { cn } from '../../lib/utils'
 import { useTodosStore, STATUS_CONFIG } from '../../store/useTodosStore'
 import { StatusIcon } from './Icons'
 import TodoRow from './TodoRow'
-import { ChevronRight, ChevronDown, Plus } from 'lucide-react'
 
-export default function TodoGroup({ status, todos, activeTodoId, onSelectTodo, onNewIssue, draggingId, onDragStart, onDragEnd }) {
+export default function TodoGroup({
+  status, todos, activeTodoId, onSelectTodo,
+  onNewIssue, draggingId, onDragStart, onDragEnd,
+}) {
   const collapsed      = useTodosStore(s => s.collapsedGroups.includes(status))
   const toggleCollapse = useTodosStore(s => s.toggleGroupCollapse)
   const updateTodo     = useTodosStore(s => s.updateTodo)
   const cfg            = STATUS_CONFIG[status]
-
   const [dragOver, setDragOver] = useState(false)
 
-  const isDragging  = draggingId !== null
-  const hasItems    = todos.length > 0
-  const showBody    = !collapsed && (hasItems || isDragging)
+  const isDragging = draggingId !== null
+  const hasItems   = todos.length > 0
 
-  // Hide empty groups entirely when nothing is being dragged
   if (!hasItems && !isDragging) return null
 
-  /* ── drag event handlers ── */
-  const handleDragOver = (e) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    setDragOver(true)
-  }
-
-  const handleDragEnter = (e) => {
-    e.preventDefault()
-    setDragOver(true)
-  }
-
-  const handleDragLeave = (e) => {
-    // Only clear if leaving the group container entirely
-    if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false)
-  }
-
-  const handleDrop = (e) => {
-    e.preventDefault()
-    setDragOver(false)
+  const handleDragOver  = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOver(true) }
+  const handleDragEnter = (e) => { e.preventDefault(); setDragOver(true) }
+  const handleDragLeave = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false) }
+  const handleDrop      = (e) => {
+    e.preventDefault(); setDragOver(false)
     const id = e.dataTransfer.getData('todoId')
     if (id) updateTodo(id, { status })
   }
@@ -49,31 +35,42 @@ export default function TodoGroup({ status, todos, activeTodoId, onSelectTodo, o
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`transition-colors ${dragOver ? 'bg-accent/5 ring-1 ring-inset ring-accent/20' : ''}`}
+      className={cn(
+        'transition-colors duration-150',
+        dragOver && 'bg-primary/5 ring-1 ring-inset ring-primary/20'
+      )}
     >
       {/* Group header */}
       <div
-        className="group flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-surface-hover transition-colors border-b border-surface-border sticky top-0 bg-surface z-10"
         onClick={() => toggleCollapse(status)}
+        className={cn(
+          'group flex items-center gap-2 px-3 h-9 border-b border-border/60',
+          'cursor-pointer hover:bg-muted/30 transition-colors sticky top-0 bg-background z-10',
+        )}
       >
-        <span className="text-ink-faint">
-          {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+        <span className="text-muted-foreground/40 shrink-0">
+          {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
         </span>
         <StatusIcon status={status} size={13} />
-        <span className="text-sm font-medium text-ink">{cfg.label}</span>
-        <span className="text-xs text-ink-faint bg-surface-overlay px-1.5 py-0.5 rounded-full">{todos.length}</span>
+        <span className="text-sm font-medium text-foreground">{cfg.label}</span>
+        <span className="text-[11px] text-muted-foreground/50 bg-muted px-1.5 py-0.5 rounded-md tabular-nums">
+          {todos.length}
+        </span>
         <span className="flex-1" />
         <button
-          className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-xs text-ink-faint hover:text-ink px-1.5 py-0.5 rounded hover:bg-surface-border transition-all"
           onClick={(e) => { e.stopPropagation(); onNewIssue(status) }}
-          title="New issue in this group"
+          className={cn(
+            'opacity-0 group-hover:opacity-100 flex items-center gap-1',
+            'text-[11px] text-muted-foreground hover:text-foreground',
+            'px-2 py-1 rounded-lg hover:bg-muted transition-all'
+          )}
         >
-          <Plus size={11} /> Add
+          <Plus size={10} /> Add
         </button>
       </div>
 
       {/* Rows */}
-      {showBody && (
+      {!collapsed && (
         <div>
           {todos.map(todo => (
             <TodoRow
@@ -87,12 +84,13 @@ export default function TodoGroup({ status, todos, activeTodoId, onSelectTodo, o
             />
           ))}
 
-          {/* Empty drop zone shown only while dragging */}
+          {/* Empty drop zone — only shown while dragging */}
           {!hasItems && isDragging && (
-            <div className={`flex items-center justify-center py-5 text-xs transition-colors
-              ${dragOver ? 'text-accent' : 'text-ink-faint'}`}
-            >
-              {dragOver ? `Move here → ${cfg.label}` : 'Drop issue here'}
+            <div className={cn(
+              'flex items-center justify-center py-6 text-xs transition-colors',
+              dragOver ? 'text-foreground' : 'text-muted-foreground/30'
+            )}>
+              {dragOver ? `Move to ${cfg.label}` : 'Drop here'}
             </div>
           )}
         </div>

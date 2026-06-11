@@ -7,7 +7,7 @@ export default function App() {
   const [view, setView] = useState('notes')
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface text-ink">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground">
       <Sidebar view={view} setView={setView} />
       <main className="flex-1 min-w-0 overflow-hidden">
         {view === 'notes' ? <NotesView /> : <TodosView />}
